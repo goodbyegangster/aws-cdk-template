@@ -1,0 +1,29 @@
+{
+  "name": "data_zone",
+  "version": "0.1.0",
+  "bin": {
+    "data_zone": "bin/dataZone.js"
+  },
+  "scripts": {
+    "deploy-datasource": "npx cdk --profile private deploy --require-approval never DataSource",
+    "load-redshift": "bash scripts/load-redshift.sh private",
+    "run-crawler": "bash scripts/run-crawler.sh private",
+    "deploy-datazone": "bash scripts/deploy-datazone.sh private",
+    "run-datasource": "bash scripts/run-datasource.sh private",
+    "create-lake-environment": "bash scripts/create-lake-environment.sh private",
+    "remove-permissions": "bash scripts/remove-permissions-for-all-users.sh private"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.7.9",
+    "aws-cdk": "^2.1000.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.179.0",
+    "constructs": "^10.0.0"
+  }
+}

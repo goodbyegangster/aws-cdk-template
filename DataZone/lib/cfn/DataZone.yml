@@ -1,0 +1,490 @@
+Description: DataZone
+Resources:
+  DomainExecutionRole3CEB155A:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: datazone.amazonaws.com
+          - Action:
+              - sts:AssumeRole
+              - sts:TagSession
+            Condition:
+              StringEquals:
+                aws:SourceAccount:
+                  Ref: AWS::AccountId
+              ForAllValues:StringLike:
+                aws:TagKeys: datazone*
+            Effect: Allow
+            Principal:
+              Service: datazone.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AmazonDataZoneDomainExecutionRolePolicy
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - iam:GetRole
+                  - iam:GetUser
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+          PolicyName: SecretsManagerAccessPolicy
+      RoleName: DataZone-DomainExecutionRole
+  Domain:
+    Type: AWS::DataZone::Domain
+    Properties:
+      Description: demo
+      DomainExecutionRole:
+        Fn::GetAtt:
+          - DomainExecutionRole3CEB155A
+          - Arn
+      Name: demo
+  blueprintProvisioningRole1B96195C:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: datazone.amazonaws.com
+          - Action:
+              - sts:AssumeRole
+              - sts:TagSession
+            Condition:
+              StringEquals:
+                aws:SourceAccount:
+                  Ref: AWS::AccountId
+            Effect: Allow
+            Principal:
+              Service: datazone.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/AmazonDataZoneRedshiftGlueProvisioningPolicy
+      RoleName: DataZone-BlueprintProvisioningRole
+  BlueprintDWHAccessRole708F8247:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: datazone.amazonaws.com
+          - Action:
+              - sts:AssumeRole
+              - sts:TagSession
+            Condition:
+              StringEquals:
+                aws:SourceAccount:
+                  Ref: AWS::AccountId
+              ArnEquals:
+                aws:SourceArn:
+                  Fn::GetAtt:
+                    - Domain
+                    - Arn
+            Effect: Allow
+            Principal:
+              Service: datazone.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AmazonDataZoneRedshiftManageAccessRolePolicy
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action: secretsmanager:GetSecretValue
+                Condition:
+                  StringEquals:
+                    secretsmanager:ResourceTag/AmazonDataZoneDomain:
+                      Fn::GetAtt:
+                        - Domain
+                        - Id
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+          PolicyName: SecretsManagerAccessPolicy
+      RoleName: DataZone-BlueprintDWHAccessRole
+  EnvironmentBlueprintDWH:
+    Type: AWS::DataZone::EnvironmentBlueprintConfiguration
+    Properties:
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      EnabledRegions:
+        - ap-northeast-1
+      EnvironmentBlueprintIdentifier: DefaultDataWarehouse
+      ManageAccessRoleArn:
+        Fn::GetAtt:
+          - BlueprintDWHAccessRole708F8247
+          - Arn
+      ProvisioningRoleArn:
+        Fn::GetAtt:
+          - blueprintProvisioningRole1B96195C
+          - Arn
+  BlueprintLakeAccessRoleDF3FADE6:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: datazone.amazonaws.com
+          - Action:
+              - sts:AssumeRole
+              - sts:TagSession
+            Condition:
+              StringEquals:
+                aws:SourceAccount:
+                  Ref: AWS::AccountId
+              ArnEquals:
+                aws:SourceArn:
+                  Fn::GetAtt:
+                    - Domain
+                    - Arn
+            Effect: Allow
+            Principal:
+              Service: datazone.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AmazonDataZoneGlueManageAccessRolePolicy
+      RoleName: DataZone-BlueprintLakeAccessRole
+  ProjectProducer:
+    Type: AWS::DataZone::Project
+    Properties:
+      Description: Producer
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      Name: ProjectProducer
+  ProjectConsumer:
+    Type: AWS::DataZone::Project
+    Properties:
+      Description: Consumer
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      Name: ProjectConsumer
+  SecretProducerF8EB41BD:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DataZone-DWH-for-Producer
+      SecretString: '{"username":"admin","password":"Passw0rd"}'
+      Tags:
+        - Key: AmazonDataZoneDomain
+          Value:
+            Fn::GetAtt:
+              - Domain
+              - Id
+        - Key: AmazonDataZoneProject
+          Value:
+            Fn::GetAtt:
+              - ProjectProducer
+              - Id
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+  SecretConsumerC2088C25:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DataZone-DWH-for-Consumer
+      SecretString: '{"username":"admin","password":"Passw0rd"}'
+      Tags:
+        - Key: AmazonDataZoneDomain
+          Value:
+            Fn::GetAtt:
+              - Domain
+              - Id
+        - Key: AmazonDataZoneProject
+          Value:
+            Fn::GetAtt:
+              - ProjectConsumer
+              - Id
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+  EnvDWHProfileProducer:
+    Type: AWS::DataZone::EnvironmentProfile
+    Properties:
+      AwsAccountId:
+        Ref: AWS::AccountId
+      AwsAccountRegion: ap-northeast-1
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      EnvironmentBlueprintIdentifier:
+        Fn::GetAtt:
+          - EnvironmentBlueprintDWH
+          - EnvironmentBlueprintId
+      Name: redshift-producer
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectProducer
+          - Id
+      UserParameters:
+        - Name: dataAccessSecretsArn
+          Value:
+            Ref: SecretProducerF8EB41BD
+        - Name: dbName
+          Value: tickitdb
+        - Name: workgroupName
+          Value: datazone-source
+        - Name: profilePermissionLevel
+          Value: FULL_ACCESS
+        - Name: allowedProjects
+          Value:
+            Fn::GetAtt:
+              - ProjectProducer
+              - Id
+  EnvDWHProfileConsumer:
+    Type: AWS::DataZone::EnvironmentProfile
+    Properties:
+      AwsAccountId:
+        Ref: AWS::AccountId
+      AwsAccountRegion: ap-northeast-1
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      EnvironmentBlueprintIdentifier:
+        Fn::GetAtt:
+          - EnvironmentBlueprintDWH
+          - EnvironmentBlueprintId
+      Name: redshift-consumer
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectConsumer
+          - Id
+      UserParameters:
+        - Name: dataAccessSecretsArn
+          Value:
+            Ref: SecretConsumerC2088C25
+        - Name: dbName
+          Value: tickitdb
+        - Name: workgroupName
+          Value: datazone-source
+        - Name: profilePermissionLevel
+          Value: LIMITED_ACCESS
+        - Name: allowedProjects
+          Value:
+            Fn::GetAtt:
+              - ProjectConsumer
+              - Id
+  EnvProducer:
+    Type: AWS::DataZone::Environment
+    Properties:
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      EnvironmentAccountIdentifier:
+        Ref: AWS::AccountId
+      EnvironmentAccountRegion: ap-northeast-1
+      EnvironmentProfileIdentifier:
+        Fn::GetAtt:
+          - EnvDWHProfileProducer
+          - Id
+      Name: dwh-producer
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectProducer
+          - Id
+  EnvConsumer:
+    Type: AWS::DataZone::Environment
+    Properties:
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      EnvironmentAccountIdentifier:
+        Ref: AWS::AccountId
+      EnvironmentAccountRegion: ap-northeast-1
+      EnvironmentProfileIdentifier:
+        Fn::GetAtt:
+          - EnvDWHProfileConsumer
+          - Id
+      Name: dwh-consumer
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectConsumer
+          - Id
+  DataSourceDWH:
+    Type: AWS::DataZone::DataSource
+    Properties:
+      Configuration:
+        RedshiftRunConfiguration:
+          DataAccessRole:
+            Fn::GetAtt:
+              - BlueprintDWHAccessRole708F8247
+              - Arn
+          RedshiftCredentialConfiguration:
+            SecretManagerArn:
+              Ref: SecretProducerF8EB41BD
+          RedshiftStorage:
+            RedshiftServerlessSource:
+              WorkgroupName: datazone-source
+          RelationalFilterConfigurations:
+            - DatabaseName: tickitdb
+              FilterExpressions:
+                - Expression: "*"
+                  Type: INCLUDE
+              SchemaName: demo
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      EnableSetting: ENABLED
+      EnvironmentIdentifier:
+        Fn::GetAtt:
+          - EnvProducer
+          - Id
+      Name: redshift-demo
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectProducer
+          - Id
+      PublishOnImport: false
+      Recommendation:
+        EnableBusinessNameGeneration: false
+      Schedule:
+        Schedule: cron(0 0 ? 1 1 *)
+        Timezone: UTC
+      Type: REDSHIFT
+  ProducerMemberSteward:
+    Type: AWS::DataZone::ProjectMembership
+    Properties:
+      Designation: PROJECT_CATALOG_STEWARD
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      Member:
+        UserIdentifier:
+          Fn::Join:
+            - ""
+            - - "arn:aws:iam::"
+              - Ref: AWS::AccountId
+              - :role/DataZone-data-steward
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectProducer
+          - Id
+  ProducerMemberOwner:
+    Type: AWS::DataZone::ProjectMembership
+    Properties:
+      Designation: PROJECT_OWNER
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      Member:
+        UserIdentifier:
+          Fn::Join:
+            - ""
+            - - "arn:aws:iam::"
+              - Ref: AWS::AccountId
+              - :role/DataZone-data-owner
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectProducer
+          - Id
+  ProducerMemberContributor:
+    Type: AWS::DataZone::ProjectMembership
+    Properties:
+      Designation: PROJECT_CONTRIBUTOR
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      Member:
+        UserIdentifier:
+          Fn::Join:
+            - ""
+            - - "arn:aws:iam::"
+              - Ref: AWS::AccountId
+              - :role/DataZone-data-contributor
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectProducer
+          - Id
+  ConsumerMemberSteward:
+    Type: AWS::DataZone::ProjectMembership
+    Properties:
+      Designation: PROJECT_CATALOG_STEWARD
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      Member:
+        UserIdentifier:
+          Fn::Join:
+            - ""
+            - - "arn:aws:iam::"
+              - Ref: AWS::AccountId
+              - :role/DataZone-data-steward
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectConsumer
+          - Id
+  ConsumerMemberConsumer:
+    Type: AWS::DataZone::ProjectMembership
+    Properties:
+      Designation: PROJECT_CATALOG_CONSUMER
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      Member:
+        UserIdentifier:
+          Fn::Join:
+            - ""
+            - - "arn:aws:iam::"
+              - Ref: AWS::AccountId
+              - :role/DataZone-data-consumer
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectConsumer
+          - Id
+  ConsumerMemberViewer:
+    Type: AWS::DataZone::ProjectMembership
+    Properties:
+      Designation: PROJECT_CATALOG_VIEWER
+      DomainIdentifier:
+        Fn::GetAtt:
+          - Domain
+          - Id
+      Member:
+        UserIdentifier:
+          Fn::Join:
+            - ""
+            - - "arn:aws:iam::"
+              - Ref: AWS::AccountId
+              - :role/DataZone-data-viewer
+      ProjectIdentifier:
+        Fn::GetAtt:
+          - ProjectConsumer
+          - Id
+
