@@ -7,7 +7,7 @@ npm -g install aws-cdk
 npm -g update aws-cdk
 ```
 
-## 初期化
+## init
 
 ```sh
 # inside empty directory
