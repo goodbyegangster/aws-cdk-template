@@ -1,0 +1,40 @@
+# NOTE: https://github.com/open-metadata/openmetadata-helm-charts/blob/main/charts/deps/values.yaml
+# NOTE: https://docs.open-metadata.org/latest/deployment/kubernetes/eks#create-openmetadata-dependencies-values
+mysql:
+  enabled: false
+
+elasticsearch:
+  enabled: false
+
+airflow:
+  airflow:
+    externalDatabase:
+      type: postgresql
+      host: AMAZON_RDS_ENDPOINT
+      port: 5432
+      database: sample
+      user: root
+      passwordSecret: airflow-postgresql-secrets
+      passwordSecretKey: airflow-postgresql-password
+    extraVolumeMounts:
+      - mountPath: /airflow-logs
+        name: efs-airflow-logs
+      - mountPath: /airflow-dags/dags
+        name: efs-airflow-dags
+    extraVolumes:
+      - name: efs-airflow-logs
+        persistentVolumeClaim:
+          claimName: openmetadata-dependencies-logs-pvc
+      - name: efs-airflow-dags
+        persistentVolumeClaim:
+          claimName: openmetadata-dependencies-dags-pvc
+    config:
+      AIRFLOW__OPENMETADATA_AIRFLOW_APIS__DAG_GENERATED_CONFIGS: "/airflow-dags/dags"
+  dags:
+    path: /airflow-dags/dags
+    persistence:
+      enabled: false
+  logs:
+    path: /airflow-logs
+    persistence:
+      enabled: false

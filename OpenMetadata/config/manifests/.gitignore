@@ -1,0 +1,7 @@
+*
+
+!.gitignore
+!default
+!default/*.yml
+!permissions_pod.yml
+

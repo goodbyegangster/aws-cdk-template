@@ -1,0 +1,30 @@
+# NOTE: https://docs.open-metadata.org/latest/deployment/kubernetes/eks#change-owner-and-permission-manually-on-disks
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: permission-pod
+  name: permission-pod
+spec:
+  containers:
+    - image: nginx
+      name: permission-pod
+      volumeMounts:
+        - name: airflow-dags
+          mountPath: /airflow-dags
+        - name: airflow-logs
+          mountPath: /airflow-logs
+      command:
+        - /bin/sh
+        - -c
+      args:
+        - "chown -R 50000:50000 /airflow-dags /airflow-logs && chmod -R a+rwx /airflow-dags && nginx -g 'daemon off;'"
+  volumes:
+    - name: airflow-logs
+      persistentVolumeClaim:
+        claimName: openmetadata-dependencies-logs-pvc
+    - name: airflow-dags
+      persistentVolumeClaim:
+        claimName: openmetadata-dependencies-dags-pvc
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always

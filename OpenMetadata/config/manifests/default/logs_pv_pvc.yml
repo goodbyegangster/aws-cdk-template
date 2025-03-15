@@ -1,0 +1,33 @@
+# NOTE: https://docs.open-metadata.org/latest/deployment/kubernetes/eks#code-samples-for-pv-and-pvc-for-airflow-logs
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: openmetadata-dependencies-logs-pv
+  labels:
+    app: airflow-logs
+spec:
+  capacity:
+    storage: 5Gi
+  storageClassName: ""
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: FILESYSTEM_ID:/airflow-logs # Replace with EFS File System Id
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openmetadata-dependencies-logs-pvc
+  namespace: default
+  labels:
+    app: airflow-dags
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 5Gi
