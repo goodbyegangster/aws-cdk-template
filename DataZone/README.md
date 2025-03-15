@@ -22,7 +22,7 @@
 - S3 DataLake
   - [web-and-social-analytics.csv.zip](https://docs.aws.amazon.com/ja_jp/quicksight/latest/user/quickstart-createanalysis.html)
 
-## デプロイ作業
+## デプロイ手順
 
 前提として、対象 AWS 環境向けの profile 名を `private` に設定して利用する。
 
