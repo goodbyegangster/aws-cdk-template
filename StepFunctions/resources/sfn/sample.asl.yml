@@ -1,0 +1,17 @@
+Comment: sample
+StartAt: generate meta data
+States:
+  generate meta data:
+    Type: Pass
+    Comment: Start
+    InputPath: $
+    Parameters:
+      Parameters.$: $
+      Meta:
+        StateMachineName: sample
+        Environment: prod
+        ExecutionId.$: $$.Execution.Id
+        hogehoge: ${hogehoge}
+    Next: succeed
+  succeed:
+    Type: Succeed
