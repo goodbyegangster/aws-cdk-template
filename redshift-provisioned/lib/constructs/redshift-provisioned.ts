@@ -8,6 +8,7 @@ import { Construct } from "constructs";
 
 interface Props {
   vpc: ec2.Vpc;
+  sg: ec2.SecurityGroup;
   roleAttachedRedshift: iam.Role;
 }
 
@@ -54,6 +55,7 @@ export class RedshiftProvisioned extends Construct {
       subnetGroup: subnet,
       enhancedVpcRouting: true,
       multiAz: false,
+      securityGroups: [props.sg],
       //
       parameterGroup: params,
       encrypted: true,

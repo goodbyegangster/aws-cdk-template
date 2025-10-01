@@ -10,7 +10,7 @@ export class Networking extends Construct {
 
     this.vpc = new ec2.Vpc(this, "Vpc", {
       ipAddresses: ec2.IpAddresses.cidr("192.168.0.0/16"),
-      maxAzs: 2,
+      maxAzs: 3,
       natGateways: 0,
       subnetConfiguration: [
         {
