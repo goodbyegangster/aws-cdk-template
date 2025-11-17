@@ -4,7 +4,9 @@
   "bin": {
     "redshift-provisioned": "bin/redshift-provisioned.js"
   },
-  "scripts": {},
+  "scripts": {
+    "managed-by-Makefile": "make"
+  },
   "devDependencies": {
     "@aws-cdk/aws-redshift-alpha": "^2.218.0-alpha.0",
     "@types/jest": "^29.5.14",

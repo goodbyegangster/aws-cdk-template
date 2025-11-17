@@ -11,23 +11,23 @@ export class Networking extends Construct {
     this.vpc = new ec2.Vpc(this, "Vpc", {
       ipAddresses: ec2.IpAddresses.cidr("192.168.0.0/16"),
       maxAzs: 3,
-      natGateways: 0,
+      natGateways: 1,
       subnetConfiguration: [
         {
           cidrMask: 24,
           name: "Public",
           subnetType: ec2.SubnetType.PUBLIC,
         },
-        // {
-        //   cidrMask: 22,
-        //   name: "Protected",
-        //   subnetType: aws_ec2.SubnetType.PRIVATE_WITH_EGRESS,
-        // },
-        // {
-        //   cidrMask: 22,
-        //   name: "Private",
-        //   subnetType: aws_ec2.SubnetType.PRIVATE_ISOLATED,
-        // },
+        {
+          cidrMask: 22,
+          name: "Protected",
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        },
+        {
+          cidrMask: 22,
+          name: "Private",
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        },
       ],
     });
 

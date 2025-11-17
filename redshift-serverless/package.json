@@ -4,7 +4,9 @@
   "bin": {
     "redshift-serverless": "bin/redshift-serverless.js"
   },
-  "scripts": {},
+  "scripts": {
+    "managed-by-Makefile": "make"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "22.7.9",
