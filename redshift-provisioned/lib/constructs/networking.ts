@@ -35,5 +35,6 @@ export class Networking extends Construct {
       vpc: this.vpc,
       allowAllOutbound: true,
     });
+    this.sg.addIngressRule(ec2.Peer.ipv4("192.168.0.0/16"), ec2.Port.tcp(5439));
   }
 }
