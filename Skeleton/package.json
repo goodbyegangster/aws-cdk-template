@@ -5,8 +5,8 @@
     "skeleton": "bin/skeleton.js"
   },
   "scripts": {
-    "pro": "npx cdk --profile private deploy SkeltonPro",
-    "dev": "npx cdk --profile private deploy SkeltonDev"
+    "pro": "pnpm exec cdk --profile private deploy SkeltonPro",
+    "dev": "pnpm exec cdk --profile private deploy SkeltonDev"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
